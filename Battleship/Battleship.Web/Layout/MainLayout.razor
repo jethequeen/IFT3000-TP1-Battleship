@@ -1,0 +1,19 @@
+﻿@inherits LayoutComponentBase
+
+<div class="layout">
+    <Sidebar />
+    <main class="content">
+        @Body
+    </main>
+</div>
+
+<style>
+    .layout {
+        display: flex;
+    }
+
+    .content {
+        margin-left: 250px;
+        padding: 20px;
+    }
+</style>

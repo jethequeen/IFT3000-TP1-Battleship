@@ -1,0 +1,46 @@
+﻿<nav class="sidebar">
+    <ul>
+        <li>
+            <NavLink href="/" Match="NavLinkMatch.All" class="nav-item" active-class="active">Play</NavLink>
+        </li>
+        <li>
+            <NavLink href="/fleet-deployment" class="nav-item" active-class="active">Fleet Deployment</NavLink>
+        </li>
+    </ul>
+</nav>
+
+
+<style>
+    .sidebar {
+        width: 200px;
+        height: 100vh;
+        background-color: dimgray;
+        position: fixed;
+    }
+
+    .sidebar ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    .sidebar li {
+        margin-bottom: 15px;
+    }
+
+    .sidebar a {
+        text-decoration: none;
+        color: white;
+    }
+
+    .nav-item {
+        color: white;
+        font-size: large;
+        padding: 10px;
+        display: block;
+    }
+
+    .nav-item.active {
+        background-color: steelblue;
+        font-weight: bold;
+    }
+</style>

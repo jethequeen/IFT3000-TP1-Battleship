@@ -1,0 +1,101 @@
+﻿<div>
+    @for (int i = 0; i < Rows; i++)
+    {
+        int tempi = i;
+        <div>
+            @for (int j = 0; j < Cols; j++)
+            {
+                int tempj = j;
+                <button class="cell" style="background-color: @cellColors[i, j]; opacity: @cellOpacities[i, j]" @onclick="() => ClickAction.Invoke(tempi, tempj)" @onmouseenter="() => HoverAction.Invoke(tempi, tempj)" @onmouseleave="() => LeaveAction.Invoke(tempi, tempj)">@cellTexts[i, j]</button>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .cell {
+        width: 50px;
+        height: 50px;
+        min-height: 50px;
+        min-width: 50px;
+        margin: 2px;
+        border: 1px solid #ccc;
+        text-align: center;
+        line-height: 50px;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public required int Rows { get; set; }
+    [Parameter]
+    public required int Cols { get; set; }
+
+    [Parameter]
+    public required Action<int, int> ClickAction { get; set; }
+    [Parameter]
+    public required Action<int, int> HoverAction { get; set; }
+    [Parameter]
+    public required Action<int, int> LeaveAction { get; set; }
+
+    private int previousRows = 0;
+    private int previousCols = 0;
+
+    private string[,] cellColors = new string[0, 0];
+    private float[,] cellOpacities = new float[0, 0];
+    private string[,] cellTexts = new string[0, 0];
+
+    public void ForceRefresh(int rows, int cols)
+    {
+        Rows = rows;
+        Cols = cols;
+        OnParametersSet();
+    }
+
+    protected override void OnInitialized()
+    {
+        UpdateDimensions();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (previousRows != Rows || previousCols != Cols)
+        {
+            previousRows = Rows;
+            previousCols = Cols;
+            UpdateDimensions();
+        }
+    }
+
+    private void UpdateDimensions()
+    {
+        cellColors = new string[Rows, Cols];
+        cellOpacities = new float[Rows, Cols];
+        cellTexts = new string[Rows, Cols];
+
+        for (int i = 0; i < Rows; i++)
+        {
+            for (int j = 0; j < Cols; j++)
+            {
+                cellColors[i, j] = "white";
+                cellOpacities[i, j] = 1.0f;
+                cellTexts[i, j] = "\u200B";
+            }
+        }
+    }
+
+    public void UpdateColor(int row, int col, string color)
+    {
+        cellColors[row, col] = color;
+    }
+
+    public void UpdateOpacity(int row, int col, float opacity)
+    {
+        cellOpacities[row, col] = opacity;
+    }
+
+    public void UpdateText(int row, int col, string text)
+    {
+        cellTexts[row, col] = text;
+    }
+}

@@ -1,0 +1,35 @@
+﻿<div class="console">
+    @foreach (var message in messages)
+    {
+        <div>@message</div>
+    }
+</div>
+
+<style>
+    .console {
+        text-align: left;
+        padding: 10px;
+        overflow-y: auto;
+        border: 1px solid black;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public required int Capacity { get; set; }
+
+    private Queue<string> messages = new();
+
+    public void AddMessage(string message)
+    {
+        if (messages.Count >= Capacity)
+        {
+            messages.Dequeue();
+        }
+
+        string time = DateTime.Now.ToLongTimeString();
+        messages.Enqueue($"{time} : {message}");
+
+        StateHasChanged();
+    }
+}

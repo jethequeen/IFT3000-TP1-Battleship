@@ -1,0 +1,427 @@
+﻿@page "/fleet-deployment"
+
+<div class="container">
+    <div class="left-panel">
+        <h1>Battlefield</h1>
+        <GridComponent Rows="@rows" Cols="@cols" ClickAction="@HandleClick" HoverAction="@HandleHover" LeaveAction="@HandleLeave" @ref="gridComponent" />
+        <div style="height: 20px"/>
+        <ConsoleComponent Capacity="10" @ref=consoleComponent />
+    </div>
+    <div class="vsep" />
+    <div class="right-panel">
+        <h1>Controls</h1>
+        <div>
+            <div class="row" style="background-color: honeydew">
+                <span>Rows :</span>
+                <input type="number" min="1" max="20" disabled="@locked" @bind=rows />
+                <span />
+                <span>Columns :</span>
+                <input type="number" min="1" max="30" disabled="@locked" @bind=cols />
+            </div>
+            <div class="row" style="background-color: honeydew">
+                <button class="form-button" disabled="@locked" @onclick="Lock">Lock</button>
+            </div>
+            <div class="hsep" />
+            <div class="row" style="height: 150px">
+                <div class="choices">
+                    <InputRadioGroup @bind-Value="selectedName" @bind-Value:after="ForceRefresh">
+                        @foreach (string option in NameOptions)
+                        {
+                            <InputRadio Value="@option" disabled="@(!locked)" />@option<br>
+                        }
+                    </InputRadioGroup>
+                </div>
+            </div>
+            <div class="hsep" />
+            <div class="row" style="height: 200px">
+                <div class="grid-container" style="background-color: lavenderblush">
+                    <button class="navigation north" disabled="@(!locked || !ships.ContainsKey(selectedName))" @onclick="() => Move(Ship.Direction.North)">↑</button>
+                    <button class="navigation west" disabled="@(!locked || !ships.ContainsKey(selectedName))" @onclick="() => Move(Ship.Direction.West)">←</button>
+                    <button class="navigation east" disabled="@(!locked || !ships.ContainsKey(selectedName))" @onclick="() => Move(Ship.Direction.East)">→</button>
+                    <button class="navigation south" disabled="@(!locked || !ships.ContainsKey(selectedName))" @onclick="() => Move(Ship.Direction.South)">↓</button>
+                </div>
+                <div style="width: 2px; height: 100%; background-color: gray"/>
+                <div class="grid-container" style="background-color: ivory">
+                    <InputRadioGroup @bind-Value="selectedFacing" @bind-Value:after="Rotate">
+                        @foreach (string option in DirectionOptions)
+                        {
+                            <div class="@(option.ToLower())">
+                                <InputRadio Value="@option" disabled="@(!locked)" />@option
+                            </div>
+                        }
+                    </InputRadioGroup>
+                </div>
+            </div>
+            <div class="hsep" />
+            <div class="row" style="background-color: ghostwhite">
+                <button class="form-button" disabled="@(!locked)" onclick="@ExportScenario">Export</button>
+            </div>
+            <div>
+                <p style="text-align: left; white-space: pre-wrap">@dump</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-button {
+        width: 80px;
+        height: 30px;
+        line-height: 10px;
+        font-size: medium;
+        text-align: center;
+        padding: 10px;
+    }
+
+    .grid-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-rows: 1fr 1fr 1fr;
+        gap: 10px;
+    }
+
+    .navigation {
+        width: 50px;
+        height: 50px;
+        font: large;
+    }
+
+    .north {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .west {
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+    .east {
+        grid-column: 3;
+        grid-row: 2;
+    }
+
+    .south {
+        grid-column: 2;
+        grid-row: 3;
+    }
+
+    .choices {
+        width: 50%;
+        text-align: left;
+        padding: 10px;
+        background-color: azure;
+    }
+
+    .row {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 10px;
+        gap: 15px;
+    }
+
+    span {
+        width: 70px;
+    }
+
+    input {
+        width: 35px;
+    }
+
+    .container {
+        display: flex;
+        height: 90vh;
+    }
+
+    .left-panel {
+        flex-grow: 1;
+        padding: 10px;
+        text-align: center;
+    }
+
+    .vsep {
+        width: 2px;
+        margin-left: 50px;
+        margin-right: 50px;
+        background-color: gray;
+    }
+
+    .hsep {
+        width: 100%;
+        height: 2px;
+        background-color: gray;
+    }
+
+    .right-panel {
+        width: 400px;
+        padding: 10px;
+        text-align: center;
+    }
+</style>
+
+@code {
+    public const string PerimeterChar = "•";
+    public const string ClearChar = "\u200B";
+    public const string ClearColor = "White";
+
+    private int rows = 10;
+    private int cols = 15;
+
+    private GridComponent? gridComponent;
+    private ConsoleComponent? consoleComponent;
+
+    private bool locked = false;
+    private Grid.Grid<Navigation.Sector>? grid;
+
+    private Ship.Name? hoveringName = null;
+    private string selectedName = Conversion.nameToString(Ship.Name.Spy);
+    private string selectedFacing = Conversion.directionToString(Ship.Direction.North);
+    private string dump = "";
+
+    private readonly List<string> NameOptions = [
+        Conversion.nameToString(Ship.Name.Spy),
+        Conversion.nameToString(Ship.Name.PatrolBoat),
+        Conversion.nameToString(Ship.Name.Destroyer),
+        Conversion.nameToString(Ship.Name.Submarine),
+        Conversion.nameToString(Ship.Name.Cruiser),
+        Conversion.nameToString(Ship.Name.AircraftCarrier),
+    ];
+    private readonly List<string> DirectionOptions = [
+        Conversion.directionToString(Ship.Direction.North),
+        Conversion.directionToString(Ship.Direction.South),
+        Conversion.directionToString(Ship.Direction.East),
+        Conversion.directionToString(Ship.Direction.West),
+    ];
+
+    private readonly Dictionary<string, string> directions = new()
+    {
+        { Conversion.directionToString(Ship.Direction.North), "↑" },
+        { Conversion.directionToString(Ship.Direction.South), "↓" },
+        { Conversion.directionToString(Ship.Direction.East), "→" },
+        { Conversion.directionToString(Ship.Direction.West), "←" },
+    };
+
+    private readonly Dictionary<string, Ship.Ship> ships = [];
+
+    private void Lock()
+    {
+        locked = true;
+        grid = Battlefield.initClearGrid(rows, cols);
+    }
+
+    private void HandleClick(int i, int j)
+    {
+        if (locked && !ships.ContainsKey(selectedName))
+        {
+            Ship.Direction facing = Conversion.stringToDirection(selectedFacing);
+            Ship.Name name = Conversion.stringToName(selectedName);
+
+            if (Navigation.canPlace(i, j, facing, name, grid))
+            {
+                gridComponent?.UpdateText(i, j, directions[selectedFacing]);
+
+                Ship.Ship newShip = Ship.createShip(i, j, facing, name);
+                ships.Add(selectedName, newShip);
+                StateHasChanged();
+
+                grid = Battlefield.addShip(newShip, grid);
+
+                foreach (Tuple<int, int> coord in newShip.Coords)
+                {
+                    string color = Conversion.colorToString(Conversion.nameToColor(newShip.Name));
+                    gridComponent?.UpdateColor(coord.Item1, coord.Item2, color);
+                    gridComponent?.UpdateOpacity(coord.Item1, coord.Item2, 1.0f);
+                }
+
+                var perimeter = Ship.getPerimeter(newShip, rows, cols);
+                foreach (Tuple<int, int> coord in perimeter)
+                {
+                    gridComponent?.UpdateText(coord.Item1, coord.Item2, PerimeterChar);
+                }
+            }
+            else
+            {
+                consoleComponent?.AddMessage($"Cannot place ship class=\"{selectedName}\" facing direction={facing} at position=({i}, {j}).");
+            }
+        }
+        else if (hoveringName is not null)
+        {
+            selectedName = Conversion.nameToString(hoveringName);
+            selectedFacing = Conversion.directionToString(ships[selectedName].Facing);
+            StateHasChanged();
+        }
+    }
+
+    private void HandleHover(int i, int j)
+    {
+        if (locked)
+        {
+            string color = Conversion.colorToString(Conversion.nameToColor(Conversion.stringToName(selectedName)));
+            HandleColorChange(i, j, color, true);
+        }
+    }
+
+    private void HandleLeave(int i, int j)
+    {
+        if (locked)
+        {
+            HandleColorChange(i, j, ClearColor, false);
+        }
+    }
+
+    private void HandleColorChange(int i, int j, string color, bool engaged)
+    {
+        if (!ships.ContainsKey(selectedName))
+        {
+            Ship.Direction facing = Conversion.stringToDirection(selectedFacing);
+            Ship.Name name = Conversion.stringToName(selectedName);
+
+            if (Navigation.canPlace(i, j, facing, name, grid))
+            {
+                string text;
+                float opacity;
+                if (engaged)
+                {
+                    text = directions[selectedFacing];
+                    opacity = 0.4f;
+                }
+                else
+                {
+                    text = ClearChar;
+                    opacity = 1.0f;
+                }
+                gridComponent?.UpdateText(i, j, text);
+
+                Ship.Ship ship = Ship.createShip(i, j, facing, name);
+                foreach (Tuple<int, int> coord in ship.Coords)
+                {
+                    gridComponent?.UpdateColor(coord.Item1, coord.Item2, color);
+                    gridComponent?.UpdateOpacity(coord.Item1, coord.Item2, opacity);
+                }
+            }
+        }
+        else
+        {
+            if (hoveringName is not null)
+            {
+                foreach (Tuple<int, int> coord in ships[Conversion.nameToString(hoveringName)].Coords)
+                {
+                    gridComponent?.UpdateOpacity(coord.Item1, coord.Item2, 1.0f);
+                }
+            }
+
+            try
+            {
+                hoveringName = Battlefield.getSelectedName(i, j, grid).Value;
+            }
+            catch (NullReferenceException)
+            {
+                hoveringName = null;
+            }
+
+            if (engaged && hoveringName is not null)
+            {
+                foreach (Tuple<int, int> coord in ships[Conversion.nameToString(hoveringName)].Coords)
+                {
+                    gridComponent?.UpdateOpacity(coord.Item1, coord.Item2, 0.4f);
+                }
+            }
+        }
+    }
+
+    private void Move(Ship.Direction direction)
+    {
+        if (ships.TryGetValue(selectedName, out Ship.Ship? ship))
+        {
+            if (Navigation.canMove(ship, direction, grid))
+            {
+                EraseShip(ship);
+                gridComponent?.UpdateText(ship.Center.Item1, ship.Center.Item2, ClearChar);
+
+                Ship.Ship newShip = Navigation.move(ship, direction);
+                UpdateShip(newShip);
+
+                DrawPerimeters();
+
+                gridComponent?.UpdateText(newShip.Center.Item1, newShip.Center.Item2, directions[Conversion.directionToString(newShip.Facing)]);
+            }
+            else
+            {
+                consoleComponent?.AddMessage($"Cannot move ship class=\"{selectedName}\" in direction={direction}.");
+            }
+        }
+    }
+
+    private void Rotate()
+    {
+        if (ships.TryGetValue(selectedName, out Ship.Ship? ship))
+        {
+            Ship.Direction direction = Conversion.stringToDirection(selectedFacing);
+            if (Navigation.canRotate(ship, direction, grid))
+            {
+                EraseShip(ship);
+                gridComponent?.UpdateText(ship.Center.Item1, ship.Center.Item2, directions[selectedFacing]);
+
+                Ship.Ship newShip = Navigation.rotate(ship, direction);
+                UpdateShip(newShip);
+
+                DrawPerimeters();
+            }
+            else
+            {
+                selectedFacing = Conversion.directionToString(ship.Facing);
+                consoleComponent?.AddMessage($"Cannot rotate ship class=\"{selectedName}\" in direction={direction}.");
+            }
+        }
+    }
+
+    private void EraseShip(Ship.Ship ship)
+    {
+        var oldPerimeter = Ship.getPerimeter(ship, rows, cols);
+        foreach (Tuple<int, int> coord in oldPerimeter)
+        {
+            gridComponent?.UpdateText(coord.Item1, coord.Item2, ClearChar);
+        }
+
+        foreach (Tuple<int, int> coord in ship.Coords)
+        {
+            gridComponent?.UpdateColor(coord.Item1, coord.Item2, ClearColor);
+        }
+    }
+
+    private void UpdateShip(Ship.Ship newShip)
+    {
+        ships[selectedName] = newShip;
+        grid = Battlefield.replaceShip(newShip, grid);
+        foreach (Tuple<int, int> coord in newShip.Coords)
+        {
+            string color = Conversion.colorToString(Conversion.nameToColor(newShip.Name));
+            gridComponent?.UpdateColor(coord.Item1, coord.Item2, color);
+        }
+    }
+
+    private void DrawPerimeters()
+    {
+        foreach (Ship.Ship existingShip in ships.Values)
+        {
+            var perimeter = Ship.getPerimeter(existingShip, rows, cols);
+            foreach (Tuple<int, int> coord in perimeter)
+            {
+                gridComponent?.UpdateText(coord.Item1, coord.Item2, PerimeterChar);
+            }
+        }
+    }
+
+    private void ExportScenario()
+    {
+        Battlefield.Data data = Battlefield.extractData(grid);
+        dump = Serialization.getDump(data);
+    }
+
+    private void ForceRefresh()
+    {
+        selectedFacing = Conversion.directionToString(ships[selectedName].Facing);
+        StateHasChanged();
+    }
+}
