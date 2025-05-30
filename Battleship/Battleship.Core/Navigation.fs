@@ -66,13 +66,31 @@ module Navigation =
         
         insideGrid && statesVerification coords && doesNotCollideWithPerimeters
 
+    let calculateNewCoords (ship: Ship) (direction: Direction) : Coord List =
+        let coords = ship.Coords
+        let rec newCoords coords resultsList =
+            match coords with
+            | [] -> resultsList
+            | (x,y) :: rest ->
+                let newCoord =
+                    match direction with
+                    | North -> (x, y-1)
+                    | South -> (x, y+1)
+                    | East  -> (x+1, y)
+                    | West  -> (x-1, y)
+                newCoords rest (newCoord :: resultsList)                
+        newCoords coords []
+
             
 
     let canMove (ship: Ship) (direction: Direction) (grid: Sector Grid) : bool =
         (* ------- À COMPLÉTER ------- *)
         (* ----- Implémentation ------ *)
-        false
-
+        
+       // let coords = ship.Coords
+       // let newCoords = calculateNewCoords ship direction 
+            
+        
     let move (ship: Ship) (direction: Direction) : Ship =
         (* ------- À COMPLÉTER ------- *)
         (* ----- Implémentation ------ *)
