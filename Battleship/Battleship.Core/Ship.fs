@@ -22,20 +22,29 @@ module Ship =
     (* ------- À COMPLÉTER ------- *)
     (* --- Nouvelles fonctions --- *)
     
-    let rec generateCoords (remaining: int) (coordsList : Coord List)
+    let generateCoords (length: int) (coordsList : Coord List)
                            (facing: Direction) (center: Coord) : Coord List =
-        match remaining with
-        | 0 -> coordsList
-        | _ ->
-            let (x,y) = center
-            let nextCoord =
-                match facing with
-                | North -> (x, y-1)
-                | South -> (x, y+1)
-                | East  -> (x+1, y)
-                | West -> (x-1, y)
-                    
-            generateCoords (remaining-1) (nextCoord :: coordsList) facing center
+        
+        let indexCenter =
+            if length % 2 = 0 then (length / 2) else length / 2
+        let (x,y) = center
+        
+        let rec nextCoords (length: int) (remainingCoordsList : Coord List)  =
+            if length <= 0 then List.rev remainingCoordsList
+            else
+                let offset = (length) - 1 - indexCenter
+                if offset = 0
+                    then nextCoords (length-1) (center :: remainingCoordsList)
+                else
+                    let coord =
+                        match facing with
+                        | North -> (x-offset, y)
+                        | South -> (x+offset, y)
+                        | East  -> (x, y+offset)
+                        | West -> (x, y-offset)
+                    nextCoords (length-1) (coord :: remainingCoordsList)
+                
+        nextCoords length []
 
     let createShip (center: Coord) (facing: Direction) (name: Name) : Ship =
         let length =
@@ -43,7 +52,7 @@ module Ship =
             | Spy -> 2
             | PatrolBoat -> 2
             | Destroyer -> 3
-            | Submarine -> 4
+            | Submarine -> 3
             | Cruiser -> 4
             | AircraftCarrier -> 5
         
