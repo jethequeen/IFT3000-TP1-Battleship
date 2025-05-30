@@ -19,6 +19,7 @@ module Ship =
 
     type Ship = {Coords: Coord list; Center: Coord; Facing: Direction; Name: Name}
 
+    (* --- Nouvelles fonctions --- *)
     let generateCoords (length: int) (coordsList : Coord List)
                            (facing: Direction) (center: Coord) : Coord List =
         
@@ -42,20 +43,8 @@ module Ship =
                     nextCoords (length-1) (coord :: remainingCoordsList)
                 
         nextCoords length []
-
-    let createShip (center: Coord) (facing: Direction) (name: Name) : Ship =
-        let length =
-            match name with
-            | Spy -> 2
-            | PatrolBoat -> 2
-            | Destroyer -> 3
-            | Submarine -> 3
-            | Cruiser -> 4
-            | AircraftCarrier -> 5
         
-        let coords = generateCoords length [] facing center
-        { Coords = coords; Center = center; Facing = facing; Name = name }
-
+        
     let adjacentCells (x,y) : Coord List =
         [ (x+1, y); (x, y+1); (x+1, y+1); (x-1, y); 
         (x, y-1); (x-1, y-1); (x+1, y-1); (x-1, y+1) ]
@@ -83,7 +72,20 @@ module Ship =
         
         addCoords 0 []
         
-            
+    (* ------- À COMPLÉTER ------- *)
+    let createShip (center: Coord) (facing: Direction) (name: Name) : Ship =
+        let length =
+            match name with
+            | Spy -> 2
+            | PatrolBoat -> 2
+            | Destroyer -> 3
+            | Submarine -> 3
+            | Cruiser -> 4
+            | AircraftCarrier -> 5
+        
+        let coords = generateCoords length [] facing center
+        { Coords = coords; Center = center; Facing = facing; Name = name }
+
         
     let getPerimeter (ship: Ship) (dims: Dims) : Coord list =
         
