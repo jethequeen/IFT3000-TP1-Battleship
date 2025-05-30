@@ -54,23 +54,6 @@ module Ship =
         |> List.collect adjacentCells
         |> List.distinct
     
-    let getGridCoords (dims: Dims) : Coord List =
-        let (i, j) = dims
-        let x = 0
-        let y = 0
-        
-        let rec addRow x y (coordList : Coord List) =
-            if i = x then coordList
-            else
-               addRow (x + 1) y ((x, y) :: coordList)
-        
-        let rec addCoords y (coordList: Coord List) =
-            if j = y then coordList
-            else
-                let row = addRow 0 y []
-                addCoords (y + 1) (coordList @ row)
-        
-        addCoords 0 []
         
     (* ------- À COMPLÉTER ------- *)
     let createShip (center: Coord) (facing: Direction) (name: Name) : Ship =
