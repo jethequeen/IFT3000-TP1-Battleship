@@ -51,3 +51,46 @@ printTest "Test 10 - West (0,0), length 5" coords10 [(0,-2); (0,-1); (0,0); (0,1
 // === Test 11 ===
 let coords11 = generateCoords 5 [] South (2,2)
 printTest "Test 11 - South (2,2), length 5" coords11 [(4,2); (3,2); (2,2); (1,2); (0,2)]
+
+
+
+let printShipTest name (ship: Ship) expectedCoords =
+    printfn "%s: %A" name ship.Coords
+    printfn "Attendu : %A\n" expectedCoords
+
+// === Test 1 ===
+let ship1 = createShip (3,3) East Destroyer  // length = 3
+printShipTest "Test 1 - Destroyer (3,3) East"
+    ship1 [(3,4); (3,3); (3,2)]
+
+// === Test 2 ===
+let ship2 = createShip (2,2) North Cruiser  // length = 4
+printShipTest "Test 2 - Cruiser (2,2) North"
+    ship2 [(1,2); (2,2); (3,2); (4,2)]
+
+// === Test 3 ===
+let ship3 = createShip (1,1) South PatrolBoat  // length = 2
+printShipTest "Test 3 - PatrolBoat (1,1) South"
+    ship3 [(1,1); (0,1)]
+
+// === Test 4 ===
+let ship4 = createShip (5,5) West AircraftCarrier  // length = 5
+printShipTest "Test 4 - AircraftCarrier (5,5) West"
+    ship4 [(5,3); (5,4); (5,5); (5,6); (5,7)]
+
+
+let dims = (10, 10) // grille 10x10
+
+
+// === Test 12 === Périmètre autour d’un bateau au centre ===
+let ship12 = createShip (5,5) North Cruiser // length = 4, center index = 1
+let peri12 = getPerimeter ship12 dims
+printTest "Test 12 - Périmètre autour de (5,5) North Cruiser" peri12 peri12
+// Pas de "attendu" exact ici, juste vérification manuelle que ça exclut bien les coords du bateau et reste dans la grille
+
+// === Test 13 === Périmètre autour d’un bateau au bord ===
+let ship13 = createShip (0,0) East PatrolBoat // length = 2
+let peri13 = getPerimeter ship13 dims
+printTest "Test 13 - Périmètre autour de (0,0) East PatrolBoat" peri13 peri13
+
+// Doit contenir seulement des coordonnées valides dans la grille, donc pas de coordonnées négatives
