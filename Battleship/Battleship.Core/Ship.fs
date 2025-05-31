@@ -54,9 +54,8 @@ module Ship =
         |> List.collect adjacentCells
         |> List.distinct
     
-        
-    (* ------- À COMPLÉTER ------- *)
-    let createShip (center: Coord) (facing: Direction) (name: Name) : Ship =
+    
+    let getLength (name: Name) : int =
         let length =
             match name with
             | Spy -> 2
@@ -65,7 +64,20 @@ module Ship =
             | Submarine -> 3
             | Cruiser -> 4
             | AircraftCarrier -> 5
+        length
         
+ 
+    let getCenterFromCoords (coords : Coord list) : Coord =
+        let length = coords.Length
+        let centerIndex = 
+            if length % 2 = 0 then (length / 2) else length / 2
+        
+        coords.[centerIndex]
+        
+        
+    (* ------- À COMPLÉTER ------- *)
+    let createShip (center: Coord) (facing: Direction) (name: Name) : Ship =
+        let length = getLength name
         let coords = generateCoords length [] facing center
         { Coords = coords; Center = center; Facing = facing; Name = name }
 
