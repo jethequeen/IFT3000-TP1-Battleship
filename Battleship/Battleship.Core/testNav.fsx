@@ -135,7 +135,7 @@ let runNewTests () =
     printTest "Test 25 - Peut bouger Est (dans grille)" (canMove edgeShip East emptyGrid) true
     
     // Test avec collision
-    printTest "Test 26 - Ne peut pas bouger vers bateau existant" (canMove moveShip South gridWithShip) true // Dépend de la position exacte
+    printTest "Test 26 - Collision avec le périmètre" (canMove moveShip South gridWithShip) false
 
     // Tests move
     printfn "\n--- Tests move ---"
@@ -168,3 +168,137 @@ let runNewTests () =
 
 // Lancer les tests
 runNewTests ()
+
+let runNewFunctionTests () =
+    printfn "\n=== Tests des nouvelles fonctions ==="
+    
+    // Grille vide pour les tests
+    let clearRow = [for _ in 1 .. 10 -> Clear]
+    let emptyGrid =
+        Row (clearRow,
+        Row (clearRow,
+        Row (clearRow,
+        Row (clearRow,
+        Row (clearRow,
+        Row (clearRow,
+        Row (clearRow,
+        Row (clearRow,
+        Row (clearRow,
+        Row (clearRow, Empty))))))))))
+
+    // Grille avec un bateau pour tester les collisions
+    let gridWithShip =
+        Row ([Clear; Clear; Clear; Clear; Clear; Clear; Clear; Clear; Clear; Clear],
+        Row ([Clear; Clear; Clear; Clear; Clear; Clear; Clear; Clear; Clear; Clear],
+        Row ([Clear; Clear; Clear; Clear; Clear; Clear; Clear; Clear; Clear; Clear],
+        Row ([Clear; Clear; Clear; Active(Destroyer, 0); Active(Destroyer, 1); Active(Destroyer, 2); Clear; Clear; Clear; Clear],
+        Row ([Clear; Clear; Clear; Clear; Clear; Clear; Clear; Clear; Clear; Clear],
+        Row ([Clear; Clear; Clear; Clear; Clear; Clear; Clear; Clear; Clear; Clear],
+        Row ([Clear; Clear; Clear; Clear; Clear; Clear; Clear; Clear; Clear; Clear],
+        Row ([Clear; Clear; Clear; Clear; Clear; Clear; Clear; Clear; Clear; Clear],
+        Row ([Clear; Clear; Clear; Clear; Clear; Clear; Clear; Clear; Clear; Clear],
+        Row ([Clear; Clear; Clear; Clear; Clear; Clear; Clear; Clear; Clear; Clear], Empty))))))))))
+
+    // Tests calculateNewCoordsForward
+    printfn "\n--- Tests calculateNewCoordsForward ---"
+    let testShip = createShip (5,5) East Destroyer
+    let forwardCoords = calculateNewCoordsForward testShip
+    printTest "Test 16 - CalculateNewCoordsForward East" forwardCoords [(5,7); (5,6); (5,5)]
+
+    let testShipNorth = createShip (5,5) North Destroyer
+    let forwardCoordsNorth = calculateNewCoordsForward testShipNorth
+    printTest "Test 17 - CalculateNewCoordsForward North" forwardCoordsNorth [(3,5); (4,5); (5,5)]
+
+    // Tests canMoveForward
+    printfn "\n--- Tests canMoveForward ---"
+    let moveShip = createShip (5,5) East Destroyer
+    printTest "Test 18 - CanMoveForward East (grille vide)" (canMoveForward moveShip emptyGrid) true
+    
+    let edgeShip = createShip (5,8) East Destroyer // Près du bord Est
+    printTest "Test 19 - CanMoveForward East (hors grille)" (canMoveForward edgeShip emptyGrid) false
+    
+    let collisionShip = createShip (3,2) East Destroyer // Va entrer en collision
+    printTest "Test 20 - CanMoveForward avec collision" (canMoveForward collisionShip gridWithShip) false
+
+    // Tests moveForward
+    printfn "\n--- Tests moveForward ---"
+    let originalShip = createShip (5,5) East Destroyer
+    let movedShip = moveForward originalShip
+    printShipTest "Test 21 - MoveForward East" movedShip [(5,7); (5,6); (5,5)]
+    printTest "Test 22 - MoveForward conserve direction" movedShip.Facing East
+    printTest "Test 23 - MoveForward conserve nom" movedShip.Name Destroyer
+    printTest "Test 24 - MoveForward nouveau centre" movedShip.Center (5,6)
+
+    // Tests getNextDirection
+    printfn "\n--- Tests getNextDirection ---"
+    printTest "Test 25 - North Clockwise -> East" (getNextDirection North Clockwise) East
+    printTest "Test 26 - East Clockwise -> South" (getNextDirection East Clockwise) South
+    printTest "Test 27 - South Clockwise -> West" (getNextDirection South Clockwise) West
+    printTest "Test 28 - West Clockwise -> North" (getNextDirection West Clockwise) North
+    
+    printTest "Test 29 - North Counterclockwise -> West" (getNextDirection North Counterclockwise) West
+    printTest "Test 30 - West Counterclockwise -> South" (getNextDirection West Counterclockwise) South
+    printTest "Test 31 - South Counterclockwise -> East" (getNextDirection South Counterclockwise) East
+    printTest "Test 32 - East Counterclockwise -> North" (getNextDirection East Counterclockwise) North
+
+    // Tests canRotateForward
+    printfn "\n--- Tests canRotateForward ---"
+    let rotateShip = createShip (5,5) South Destroyer
+    printTest "Test 33 - CanRotateForward Clockwise (grille vide)" (canRotateForward rotateShip Clockwise emptyGrid) true
+    printTest "Test 34 - CanRotateForward Counterclockwise (grille vide)" (canRotateForward rotateShip Counterclockwise emptyGrid) true
+    
+    // Test près du bord où la rotation seule serait impossible mais la composition est possible
+    let edgeRotateShip = createShip (1,1) West PatrolBoat // Rotation vers North puis mouvement
+    printTest "Test 35 - CanRotateForward près du bord" (canRotateForward edgeRotateShip Clockwise emptyGrid) true
+    
+    // Test où la rotation + mouvement sort de la grille
+    let impossibleShip = createShip (0,0) North PatrolBoat
+    printTest "Test 36 - CanRotateForward impossible (hors grille)" (canRotateForward impossibleShip Counterclockwise emptyGrid) false
+
+    // Tests rotateForward
+    printfn "\n--- Tests rotateForward ---"
+    let rotateOriginal = createShip (5,5) South Destroyer // [(6,5); (5,5); (4,5)]
+    let rotatedForward = rotateForward rotateOriginal Clockwise // South -> West, puis mouvement West
+    
+    // Après rotation South -> West : [(5,4); (5,5); (5,6)]
+    // Après mouvement West : [(5,3); (5,4); (5,5)]
+    printShipTest "Test 37 - RotateForward South Clockwise" rotatedForward [(5,3); (5,4); (5,5)]
+    printTest "Test 38 - RotateForward nouvelle direction" rotatedForward.Facing West
+    printTest "Test 39 - RotateForward nouveau centre" rotatedForward.Center (5,4)
+
+    let rotateOriginal2 = createShip (5,5) East Destroyer // [(5,6); (5,5); (5,4)]
+    let rotatedForward2 = rotateForward rotateOriginal2 Counterclockwise // East -> North, puis mouvement North
+    
+    // Après rotation East -> North : [(4,5); (5,5); (6,5)]
+    // Après mouvement North : [(3,5); (4,5); (5,5)]
+    printShipTest "Test 40 - RotateForward East Counterclockwise" rotatedForward2 [(3,5); (4,5); (5,5)]
+    printTest "Test 41 - RotateForward nouvelle direction" rotatedForward2.Facing North
+
+    // Test de la différence entre les fonctions avec/sans périmètre
+    printfn "\n--- Tests différence périmètre ---"
+    let shipNearOther = createShip (1,3) East PatrolBoat // Près du bateau existant
+    printTest "Test 42 - canMove vérifie périmètre" (canMove shipNearOther South gridWithShip) false
+    printTest "Test 43 - canMoveForward ignore périmètre" (canMoveForward shipNearOther gridWithShip) true
+    
+        // Test avec vraie collision directe
+    let collisionShip = createShip (2,4) East Destroyer // Ses coords seraient [(2,5), (2,4), (2,3)]
+    // Si il bouge vers l'Est, nouvelles coords : [(2,6), (2,5), (2,4)]
+    // Le bateau existant est à [(3,3), (3,4), (3,5)]
+    // Pas de collision directe, mais périmètre possible
+
+    // Test avec collision directe garantie
+    let directCollisionShip = createShip (3,2) South Destroyer // Coords: [(4,2), (3,2), (2,2)]
+    // Si il bouge vers l'Est, nouvelles coords : [(4,3), (3,3), (2,3)]
+    // Le bateau existant est à [(3,3), (3,4), (3,5)] -> collision directe à (3,3)
+    printTest "Test collision directe" (canMove directCollisionShip East gridWithShip) false
+
+    printfn "\n=== Fin des tests des nouvelles fonctions ==="
+
+let runAllTests () =
+    runNewTests ()
+    runNewFunctionTests ()
+
+// Lancer tous les tests
+runAllTests ()
+
+
