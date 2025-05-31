@@ -11,10 +11,10 @@ module Grid =
     (* ------- À COMPLÉTER ------- *)
     (* --- Nouvelles fonctions --- *)
     
+    
+    
     let getGridCoords (dims: Dims) : Coord List =
-        let (i, j) = dims
-        let x = 0
-        let y = 0
+        let i, j = dims
         
         let rec addRow x y (coordList : Coord List) =
             if i = x then coordList
@@ -42,10 +42,7 @@ module Grid =
 
         let width = rowLength
         let height = rowsCount grid 0
-        (width, height)
-
-        
-        
+        (width, height)       
        
     
     let rec getSector (x: int) (y: int) (grid: 'a Grid) : 'a option =
@@ -57,3 +54,11 @@ module Grid =
                 else None
             else
                 getSector x (y - 1) remainingRows
+    
+    let filterCoords (predicate: Coord -> 'a -> bool) (grid: 'a Grid) : Coord list =
+        let dims = getDimsFromGrid grid
+        getGridCoords dims
+        |> List.filter (fun coord ->
+            match getSector (fst coord) (snd coord) grid with
+            | Some value -> predicate coord value
+            | None -> false)

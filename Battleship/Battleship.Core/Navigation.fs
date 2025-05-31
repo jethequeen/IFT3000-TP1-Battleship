@@ -20,12 +20,13 @@ module Navigation =
     (* ------- À COMPLÉTER ------- *)
     (* --- Nouvelles fonctions --- *)
     
+    // Fonction pour déterminer si le secteur est actif
     let isSectorActive sector : bool =
         match sector with
         | Some (Active _) -> true
         | _ -> false
         
-        // Fonction pour obtenir le périmètre de tous les bateaux sur la grille
+    // Fonction pour obtenir le périmètre de tous les bateaux sur la grille
     let getAllShipsPerimeters (grid: Sector Grid) : Coord list =
         let gridDims = getDimsFromGrid grid
         let activeSectors = getGridCoords gridDims |> List.filter (fun (x, y) -> 
@@ -36,13 +37,13 @@ module Navigation =
         |> List.collect adjacentCells
         |> List.distinct
         |> List.filter (fun coord -> 
-            // Vérifier que la coordonnée est dans la grille
-            let (x, y) = coord
-            let (width, height) = gridDims
+            let x, y = coord
+            let width, height = gridDims
             x >= 0 && x < width && y >= 0 && y < height &&
             not (isSectorActive(getSector x y grid))
         )
     
+    // Fonction qui détermine si les coordonnées de la liste sont disponible
     let isCoordsAvailable (coords : Coord List) (grid: Sector Grid) : bool =
         let rec statesVerification coords =
             match coords with
@@ -53,6 +54,7 @@ module Navigation =
                 else statesVerification rest
         
         statesVerification coords
+    
     
     let isCoordsInsideGrid (coords : Coord List) (grid: Sector Grid) : bool =
         let gridCoords = getGridCoords (getDimsFromGrid grid)
@@ -76,26 +78,6 @@ module Navigation =
         
         isCoordsValid && doesNotCollideWithPerimeters
 
-    let calculateNewCoords (ship: Ship) (direction: Direction) : Coord List =
-        let coords = ship.Coords
-        let rec newCoords coords resultsList =
-            match coords with
-            | [] -> resultsList
-            | (x,y) :: rest ->
-                let newCoord =
-                    match direction with
-                    | North -> (x-1, y)
-                    | South -> (x+1, y)
-                    | East  -> (x, y+1)
-                    | West  -> (x, y-1)
-                newCoords rest (newCoord :: resultsList)                
-        newCoords coords [] |> List.rev
-    
-    let calculateNewCoordsForward (ship: Ship) : Coord List =
-        calculateNewCoords ship ship.Facing
-    
-    let calculateNewCenter (ship: Ship) (direction: Direction) : Coord =
-        getCenterFromCoords (calculateNewCoords ship direction)   
 
     let canMove (ship: Ship) (direction: Direction) (grid: Sector Grid) : bool =
         canPlace (calculateNewCenter ship direction) ship.Facing ship.Name grid

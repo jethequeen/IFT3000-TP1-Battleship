@@ -8,15 +8,15 @@ open Battleship.Core.Navigation
 
 let printTest name result expected =
     if result = expected then
-        printfn "[OK] %s" name
+        printfn $"[OK] %s{name}"
     else
-        printfn "[FAIL] %s\nRésultat  : %A\nAttendu   : %A\n" name result expected
+        printfn $"[FAIL] %s{name}\nRésultat  : %A{result}\nAttendu   : %A{expected}\n"
 
 let printShipTest name (ship: Ship) expectedCoords =
     if ship.Coords = expectedCoords then
-        printfn "[OK] %s" name
+        printfn $"[OK] %s{name}"
     else
-        printfn "[FAIL] %s\nRésultat  : %A\nAttendu   : %A\n" name ship.Coords expectedCoords
+        printfn $"[FAIL] %s{name}\nRésultat  : %A{ship.Coords}\nAttendu   : %A{expectedCoords}\n"
 
 let dims = (10, 10) // Grille 10x10
 
@@ -84,17 +84,15 @@ let runNewTests () =
     // Tests getAllShipsPerimeters
     printfn "\n--- Tests getAllShipsPerimeters ---"
     let emptyPerimeters = getAllShipsPerimeters emptyGrid
-    printTest "Test 10 - Périmètres sur grille vide" (emptyPerimeters.Length) 0
+    printTest "Test 10 - Périmètres sur grille vide" emptyPerimeters.Length 0
     
     let shipPerimeters = getAllShipsPerimeters gridWithShip
-    printfn "Test 11 - Périmètres avec bateau: %d coordonnées trouvées" shipPerimeters.Length
     // Note: Le nombre exact dépend de l'implémentation, on vérifie juste qu'il y en a
     printTest "Test 11 - Périmètres avec bateau (non vide)" (shipPerimeters.Length > 0) true
 
     // Tests calculateNewCoords
     printfn "\n--- Tests calculateNewCoords ---"
     let testShip = createShip (5,5) East Destroyer // Coords: [(5,6); (5,5); (5,4)]
-    printfn "Coords before moving: %A" testShip.Coords
     
     let northCoords = calculateNewCoords testShip North
     printTest "Test 12 - Déplacement Nord" northCoords [(4,6); (4,5); (4,4)]
@@ -160,10 +158,6 @@ let runNewTests () =
     printTest "Test 34 - Placement valide (grille vide)" (canPlace (5,5) East Destroyer emptyGrid) true
     printTest "Test 35 - Placement invalide (collision directe)" (canPlace (3,4) East Destroyer gridWithShip) false
     
-    // Test de placement près d'un bateau (périmètre)
-    let nearShipPlacement = canPlace (2,3) East PatrolBoat gridWithShip // Devrait être invalide à cause du périmètre
-    printfn "Test 36 - Placement près d'un bateau (périmètre): %b" nearShipPlacement
-
     printfn "\n=== Fin des tests ==="
 
 // Lancer les tests
@@ -281,10 +275,6 @@ let runNewFunctionTests () =
     printTest "Test 43 - canMoveForward ignore périmètre" (canMoveForward shipNearOther gridWithShip) true
     
         // Test avec vraie collision directe
-    let collisionShip = createShip (2,4) East Destroyer // Ses coords seraient [(2,5), (2,4), (2,3)]
-    // Si il bouge vers l'Est, nouvelles coords : [(2,6), (2,5), (2,4)]
-    // Le bateau existant est à [(3,3), (3,4), (3,5)]
-    // Pas de collision directe, mais périmètre possible
 
     // Test avec collision directe garantie
     let directCollisionShip = createShip (3,2) South Destroyer // Coords: [(4,2), (3,2), (2,2)]
