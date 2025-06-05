@@ -12,6 +12,7 @@
 	  <Compile Include="Conversion.fs" />
 	  <Compile Include="Battlefield.fs" />
 	  <Compile Include="Serialization.fs" />
+	  <None Include="test.fsx" />
   </ItemGroup>
 
 </Project>
