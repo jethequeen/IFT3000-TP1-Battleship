@@ -14,6 +14,7 @@
 	  <Compile Include="Serialization.fs" />
 	  <None Include="testShip.fsx" />
 	  <None Include="testNav.fsx" />
+	  <None Include="testBattleship.fsx" />
   </ItemGroup>
 
 </Project>
