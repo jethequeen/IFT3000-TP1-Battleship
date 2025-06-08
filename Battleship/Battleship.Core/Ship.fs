@@ -31,30 +31,35 @@ module Ship =
             | Cruiser -> 4
             | AircraftCarrier -> 5
         length
+    
+    let getIndexOfCenter (length: int) : int =
+        match length with
+        | 2 -> 0
+        | 3 -> 1
+        | 4 -> 1
+        | 5 -> 2
+        | _ -> length/2 - 1
+
         
     let generateCoords (center: Coord) (facing: Direction) (name: Name) : Coord List =
         let length = getLength name
-        let indexCenter =
-            if length % 2 = 0 then (length / 2) else length / 2
-        let x,y = center
+        let indexCenter = getIndexOfCenter length
+        let x, y = center
         
-        let rec nextCoords (length: int) (remainingCoordsList : Coord List)  =
-            if length <= 0 then List.rev remainingCoordsList
+        let rec nextCoords (currentIndex: int) (remainingCoordsList : Coord List) =
+            if currentIndex >= length then List.rev remainingCoordsList
             else
-                let offset = length - 1 - indexCenter
-                if offset = 0
-                    then nextCoords (length-1) (center :: remainingCoordsList)
-                else
-                    let coord =
-                        match facing with
-                        | North -> (x-offset, y)
-                        | South -> (x+offset, y)
-                        | East  -> (x, y+offset)
-                        | West -> (x, y-offset)
-                    nextCoords (length-1) (coord :: remainingCoordsList)
+                let offset = currentIndex - indexCenter
+                let coord =
+                    match facing with
+                    | North -> (x + offset, y)
+                    | South -> (x - offset, y)
+                    | East  -> (x, y + offset)
+                    | West  -> (x, y - offset)
+                nextCoords (currentIndex + 1) (coord :: remainingCoordsList)
                 
-        nextCoords length []
-        
+        nextCoords 0 []
+
         
     let adjacentCells (x,y) : Coord List =
         [ (x+1, y); (x, y+1); (x+1, y+1); (x-1, y); 
@@ -67,9 +72,8 @@ module Ship =
  
     let getCenterFromCoords (coords : Coord list) : Coord =
         let length = coords.Length
-        let centerIndex = 
-            if length % 2 = 0 then (length / 2) else length / 2       
-        coords[centerIndex]
+        let indexCenter = getIndexOfCenter length
+        coords[indexCenter]
         
     let calculateNewCoords (ship: Ship) (direction: Direction) : Coord List =
         let coords = ship.Coords

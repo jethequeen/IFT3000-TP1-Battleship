@@ -70,17 +70,75 @@ module Navigation =
     let canPlace (center: Coord) (direction: Direction) (name: Name) (grid: Sector Grid) : bool =
         let ship = createShip center direction name
         let isCoordsValid = coordsVerification ship.Coords grid
+        let dims = getDimsFromGrid grid
 
-        // Vérifiez que les coordonnées voulues ne touche pas aux périmètres d'un autre bateau
-        let shipsPerimeters = getAllShipsPerimeters grid
-        let coordsColliding= ship.Coords |> List.filter (fun coord -> (List.contains coord shipsPerimeters))
-        let doesNotCollideWithPerimeters = coordsColliding.Length = 0
-        
-        isCoordsValid && doesNotCollideWithPerimeters
+        let otherShipsCoords =
+            getGridCoords dims
+            |> List.filter (fun (x, y) ->
+                match getSector x y grid with
+                | Some (Active (n, _)) -> n <> name
+                | _ -> false)
+
+        let otherShipsPerimeters =
+            otherShipsCoords
+            |> List.collect adjacentCells
+            |> List.filter (fun (x, y) ->
+                x >= 0 && y >= 0 && x < fst dims && y < snd dims &&
+                not (List.contains (x, y) otherShipsCoords))
+            |> List.distinct
+
+        let forbiddenZones = otherShipsCoords @ otherShipsPerimeters
+
+        let coordsColliding =
+            ship.Coords |> List.filter (fun coord -> List.contains coord forbiddenZones)
+
+        let doesNotCollide = coordsColliding.IsEmpty
+        isCoordsValid && doesNotCollide
+
+
 
 
     let canMove (ship: Ship) (direction: Direction) (grid: Sector Grid) : bool =
-        canPlace (calculateNewCenter ship direction) ship.Facing ship.Name grid
+        let newCenter = calculateNewCenter ship direction
+        let newShip = createShip newCenter ship.Facing ship.Name
+        let dims = getDimsFromGrid grid
+        
+        // Check if new coordinates are inside grid
+        let insideGrid = isCoordsInsideGrid newShip.Coords grid
+        
+        // Check if new coordinates are available (excluding current ship position)
+        let isAvailable = 
+            newShip.Coords 
+            |> List.forall (fun coord ->
+                let sector = getSector (fst coord) (snd coord) grid
+                match sector with
+                | Some (Active (name, _)) -> name = ship.Name  // Allow if it's the same ship
+                | Some Clear | None -> true
+                | _ -> false
+            )
+        
+        // Check collision with other ships and their perimeters
+        let otherShipsCoords =
+            getGridCoords dims
+            |> List.filter (fun (x, y) ->
+                match getSector x y grid with
+                | Some (Active (n, _)) -> n <> ship.Name  // Exclude current ship
+                | _ -> false)
+
+        let otherShipsPerimeters =
+            otherShipsCoords
+            |> List.collect adjacentCells
+            |> List.filter (fun (x, y) ->
+                x >= 0 && y >= 0 && x < fst dims && y < snd dims &&
+                not (List.contains (x, y) otherShipsCoords))
+            |> List.distinct
+
+        let forbiddenZones = otherShipsCoords @ otherShipsPerimeters
+        let doesNotCollide = 
+            newShip.Coords 
+            |> List.forall (fun coord -> not (List.contains coord forbiddenZones))
+
+        insideGrid && isAvailable && doesNotCollide
         
         
     let move (ship: Ship) (direction: Direction) : Ship =
@@ -89,7 +147,44 @@ module Navigation =
 
     let canRotate (ship: Ship) (direction: Direction) (grid: Sector Grid) : bool =
         let newShip = createShip ship.Center direction ship.Name
-        canPlace newShip.Center direction ship.Name grid          
+        let dims = getDimsFromGrid grid
+        
+        // Check if new coordinates are inside grid
+        let insideGrid = isCoordsInsideGrid newShip.Coords grid
+        
+        // Check if new coordinates are available (excluding current ship position)
+        let isAvailable = 
+            newShip.Coords 
+            |> List.forall (fun coord ->
+                let sector = getSector (fst coord) (snd coord) grid
+                match sector with
+                | Some (Active (name, _)) -> name = ship.Name  // Allow if it's the same ship
+                | Some Clear | None -> true
+                | _ -> false
+            )
+        
+        // Check collision with other ships and their perimeters
+        let otherShipsCoords =
+            getGridCoords dims
+            |> List.filter (fun (x, y) ->
+                match getSector x y grid with
+                | Some (Active (n, _)) -> n <> ship.Name  // Exclude current ship
+                | _ -> false)
+
+        let otherShipsPerimeters =
+            otherShipsCoords
+            |> List.collect adjacentCells
+            |> List.filter (fun (x, y) ->
+                x >= 0 && y >= 0 && x < fst dims && y < snd dims &&
+                not (List.contains (x, y) otherShipsCoords))
+            |> List.distinct
+
+        let forbiddenZones = otherShipsCoords @ otherShipsPerimeters
+        let doesNotCollide = 
+            newShip.Coords 
+            |> List.forall (fun coord -> not (List.contains coord forbiddenZones))
+
+        insideGrid && isAvailable && doesNotCollide          
 
     
     let rotate (ship: Ship) (direction: Direction) : Ship =
