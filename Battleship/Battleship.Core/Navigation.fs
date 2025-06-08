@@ -148,27 +148,23 @@ module Navigation =
     let canRotate (ship: Ship) (direction: Direction) (grid: Sector Grid) : bool =
         let newShip = createShip ship.Center direction ship.Name
         let dims = getDimsFromGrid grid
-        
-        // Check if new coordinates are inside grid
+
         let insideGrid = isCoordsInsideGrid newShip.Coords grid
         
-        // Check if new coordinates are available (excluding current ship position)
         let isAvailable = 
             newShip.Coords 
             |> List.forall (fun coord ->
                 let sector = getSector (fst coord) (snd coord) grid
                 match sector with
-                | Some (Active (name, _)) -> name = ship.Name  // Allow if it's the same ship
+                | Some (Active (name, _)) -> name = ship.Name
                 | Some Clear | None -> true
-                | _ -> false
             )
         
-        // Check collision with other ships and their perimeters
         let otherShipsCoords =
             getGridCoords dims
             |> List.filter (fun (x, y) ->
                 match getSector x y grid with
-                | Some (Active (n, _)) -> n <> ship.Name  // Exclude current ship
+                | Some (Active (n, _)) -> n <> ship.Name
                 | _ -> false)
 
         let otherShipsPerimeters =
