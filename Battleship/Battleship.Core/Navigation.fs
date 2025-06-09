@@ -17,9 +17,6 @@ module Navigation =
         | North -> 180
         | East -> 270
 
-    (* ------- À COMPLÉTER ------- *)
-    (* --- Nouvelles fonctions --- *)
-    
     // Fonction pour déterminer si le secteur est actif
     let isSectorActive sector : bool =
         match sector with
@@ -43,33 +40,35 @@ module Navigation =
             not (isSectorActive(getSector x y grid))
         )
     
-    // Fonction qui détermine si les coordonnées de la liste sont disponible
-    let isCoordsAvailable (coords : Coord List) (grid: Sector Grid) : bool =
+    let isCoordsAvailable (coords: Coord List) (grid: Sector Grid) (shipName: Name) : bool =
         let rec statesVerification coords =
             match coords with
             | [] -> true
             | (x, y) :: rest ->
                 let sector = getSector x y grid
-                if isSectorActive sector then false
-                else statesVerification rest
+                match sector with
+                | Some (Active (name, _)) when name = shipName -> 
+                    statesVerification rest
+                | _ when isSectorActive sector -> 
+                    false
+                | _ -> 
+                    statesVerification rest
         
         statesVerification coords
-    
     
     let isCoordsInsideGrid (coords : Coord List) (grid: Sector Grid) : bool =
         let gridCoords = getGridCoords (getDimsFromGrid grid)
         let invalidCoords = coords |> List.filter (fun coord -> not (List.contains coord gridCoords))
         invalidCoords.Length = 0   
     
-    let coordsVerification (coords : Coord List) (grid: Sector Grid) : bool =
-        let coordsVerification = isCoordsAvailable coords grid
+    let coordsVerification (coords : Coord List) (grid: Sector Grid) (shipName: Name) : bool =
+        let coordsVerification = isCoordsAvailable coords grid shipName
         let insideGrid = isCoordsInsideGrid coords grid
         insideGrid && coordsVerification
         
-    
     let canPlace (center: Coord) (direction: Direction) (name: Name) (grid: Sector Grid) : bool =
         let ship = createShip center direction name
-        let isCoordsValid = coordsVerification ship.Coords grid
+        let isCoordsValid = coordsVerification ship.Coords grid name
         let dims = getDimsFromGrid grid
 
         let otherShipsCoords =
@@ -95,34 +94,19 @@ module Navigation =
         let doesNotCollide = coordsColliding.IsEmpty
         isCoordsValid && doesNotCollide
 
-
-
-
     let canMove (ship: Ship) (direction: Direction) (grid: Sector Grid) : bool =
         let newCenter = calculateNewCenter ship direction
         let newShip = createShip newCenter ship.Facing ship.Name
         let dims = getDimsFromGrid grid
-        
-        // Check if new coordinates are inside grid
+
         let insideGrid = isCoordsInsideGrid newShip.Coords grid
-        
-        // Check if new coordinates are available (excluding current ship position)
-        let isAvailable = 
-            newShip.Coords 
-            |> List.forall (fun coord ->
-                let sector = getSector (fst coord) (snd coord) grid
-                match sector with
-                | Some (Active (name, _)) -> name = ship.Name  // Allow if it's the same ship
-                | Some Clear | None -> true
-                | _ -> false
-            )
-        
-        // Check collision with other ships and their perimeters
+        let isAvailable = isCoordsAvailable newShip.Coords grid ship.Name
+
         let otherShipsCoords =
             getGridCoords dims
             |> List.filter (fun (x, y) ->
                 match getSector x y grid with
-                | Some (Active (n, _)) -> n <> ship.Name  // Exclude current ship
+                | Some (Active (n, _)) -> n <> ship.Name
                 | _ -> false)
 
         let otherShipsPerimeters =
@@ -140,25 +124,15 @@ module Navigation =
 
         insideGrid && isAvailable && doesNotCollide
         
-        
     let move (ship: Ship) (direction: Direction) : Ship =
         createShip (calculateNewCenter ship direction) ship.Facing ship.Name
-
 
     let canRotate (ship: Ship) (direction: Direction) (grid: Sector Grid) : bool =
         let newShip = createShip ship.Center direction ship.Name
         let dims = getDimsFromGrid grid
 
         let insideGrid = isCoordsInsideGrid newShip.Coords grid
-        
-        let isAvailable = 
-            newShip.Coords 
-            |> List.forall (fun coord ->
-                let sector = getSector (fst coord) (snd coord) grid
-                match sector with
-                | Some (Active (name, _)) -> name = ship.Name
-                | Some Clear | None -> true
-            )
+        let isAvailable = isCoordsAvailable newShip.Coords grid ship.Name
         
         let otherShipsCoords =
             getGridCoords dims
@@ -182,19 +156,15 @@ module Navigation =
 
         insideGrid && isAvailable && doesNotCollide          
 
-    
     let rotate (ship: Ship) (direction: Direction) : Ship =
         createShip ship.Center direction ship.Name
 
-    
     let canMoveForward (ship: Ship) (grid: Sector Grid) : bool =
-        coordsVerification (calculateNewCoordsForward ship) grid
-
+        coordsVerification (calculateNewCoordsForward ship) grid ship.Name
 
     let moveForward (ship: Ship) : Ship =
         move ship ship.Facing
 
-    
     let getNextDirection (current: Direction) (rotation: Rotation) : Direction =
         let direction =
             match rotation with
@@ -219,4 +189,3 @@ module Navigation =
     let rotateForward (ship: Ship) (rotation: Rotation) : Ship =
         let newDirection = getNextDirection ship.Facing rotation 
         moveForward (rotate ship newDirection)
-       

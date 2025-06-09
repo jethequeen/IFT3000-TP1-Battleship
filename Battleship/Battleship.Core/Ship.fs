@@ -32,16 +32,16 @@ module Ship =
     
     let getIndexOfCenter (length: int) : int =
         match length with
-        | 2 -> 0
+        | 2 -> 1
         | 3 -> 1
-        | 4 -> 1
+        | 4 -> 2
         | 5 -> 2
         | _ -> length/2 - 1
 
     let getGenerationOffset (direction: Direction) (offset: int) : (int * int) =
         match direction with
-        | North -> (offset, 0)  
-        | South -> (-offset, 0)   
+        | North -> (-offset, 0)  
+        | South -> (offset, 0)   
         | East  -> (0, offset)    
         | West  -> (0, -offset)   
 
@@ -94,8 +94,7 @@ module Ship =
     (* ------- À COMPLÉTER ------- *)
     let createShip (center: Coord) (facing: Direction) (name: Name) : Ship =
         let coords = generateCoords center facing name
-        let actualCenter = getCenterFromCoords coords
-        { Coords = coords; Center = actualCenter; Facing = facing; Name = name }
+        { Coords = coords; Center = center; Facing = facing; Name = name }
 
     let getPerimeter (ship: Ship) (dims: Dims) : Coord list =
         let gridCoords = getGridCoords dims
