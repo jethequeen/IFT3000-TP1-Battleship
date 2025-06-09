@@ -96,6 +96,18 @@ module Battlefield =
         | Some (Active (name, _)) -> Some name
         | _ -> None
 
+    let determineFacing (coords: Coord list) : Direction =
+        match coords with
+        | first :: second :: _ ->
+            let dx = fst second - fst first
+            let dy = snd second - snd first
+            if dx > 0 then North
+            elif dx < 0 then South
+            elif dy > 0 then West
+            elif dy < 0 then East
+            else North
+        | _ -> North
+        
     let extractData (grid: Sector Grid) : Data =
         (* ------- À COMPLÉTER ------- *)
         let dims = getDimsFromGrid grid
@@ -120,7 +132,11 @@ module Battlefield =
                     failwith $"Cannot build ship {shipName} with no coordinates."
                 else
                    //  #TODO: Ne pas default le facing du bateau. Il faut une function pour ca
-                    { Name = shipName; Coords = shipCoords; Center = Ship.getCenterFromCoords shipCoords; Facing = North } : Ship)
+                    { Name = shipName
+                      Coords = shipCoords
+                      Center = Ship.getCenterFromCoords shipCoords
+                      Facing = determineFacing shipCoords
+                    } : Ship)
         { Dims = dims; Ships = ships }
 
     let loadData (data: Data) : Sector Grid =
