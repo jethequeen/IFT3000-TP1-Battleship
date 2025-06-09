@@ -91,16 +91,59 @@ module Battlefield =
 
     let getSelectedName (coord: Coord) (grid: Sector Grid) : Name option =
         (* ------- À COMPLÉTER ------- *)
-        (* ----- Implémentation ------ *)
-        None
+        match getSector (fst coord) (snd coord) grid with
+        | Some (Active (name, _)) -> Some name
+        | _ -> None
 
+    let determineFacing (coords: Coord list) : Direction =
+        match coords with
+        | first :: second :: _ ->
+            let dx = fst second - fst first
+            let dy = snd second - snd first
+            if dx > 0 then North
+            elif dx < 0 then South
+            elif dy > 0 then West
+            elif dy < 0 then East
+            else North
+        | _ -> North
+        
     let extractData (grid: Sector Grid) : Data =
         (* ------- À COMPLÉTER ------- *)
-        (* ----- Implémentation ------ *)
-        { Dims = (0, 0); Ships = [] }
+        let dims = getDimsFromGrid grid
+
+        let shipParts =
+            getGridCoords dims
+            |> List.choose (fun coord ->
+                match getSector (fst coord) (snd coord) grid with
+                | Some (Active (name, index)) -> Some (name, coord, index)
+                | _ -> None)
+
+        let ships =
+            shipParts
+            |> List.groupBy (fun (name, _, _) -> name)
+            |> List.map (fun (shipName, parts) ->
+                let shipCoords =
+                    parts
+                    |> List.sortBy (fun (_, _, index) -> index)
+                    |> List.map (fun (_, coord, _) -> coord)
+                
+                if List.isEmpty shipCoords then
+                    failwith $"Cannot build ship {shipName} with no coordinates."
+                else
+                    { Name = shipName
+                      Coords = shipCoords
+                      Center = Ship.getCenterFromCoords shipCoords
+                      Facing = determineFacing shipCoords
+                    } : Ship)
+        { Dims = dims; Ships = ships }
 
     let loadData (data: Data) : Sector Grid =
         (* ------- À COMPLÉTER ------- *)
-        (* ----- Implémentation ------ *)
-        Empty
+        // Initialiser une grille vide
+        let initialGrid = initClearGrid data.Dims
+
+        // Ajouter chaque bateau en iterant sur la liste
+        List.fold (fun currentGrid shipToAdd ->
+            addShip shipToAdd currentGrid
+        ) initialGrid data.Ships
                  
