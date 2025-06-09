@@ -91,16 +91,46 @@ module Battlefield =
 
     let getSelectedName (coord: Coord) (grid: Sector Grid) : Name option =
         (* ------- À COMPLÉTER ------- *)
-        (* ----- Implémentation ------ *)
-        None
+        // TODO: Valider si on voit le nom lorsqu'on hover sur le bateau
+        match getSector (fst coord) (snd coord) grid with
+        | Some (Active (name, _)) -> Some name
+        | _ -> None
 
     let extractData (grid: Sector Grid) : Data =
         (* ------- À COMPLÉTER ------- *)
-        (* ----- Implémentation ------ *)
-        { Dims = (0, 0); Ships = [] }
+        let dims = getDimsFromGrid grid
+
+        let shipParts =
+            getGridCoords dims
+            |> List.choose (fun coord ->
+                match getSector (fst coord) (snd coord) grid with
+                | Some (Active (name, index)) -> Some (name, coord, index)
+                | _ -> None)
+
+        let ships =
+            shipParts
+            |> List.groupBy (fun (name, _, _) -> name)
+            |> List.map (fun (shipName, parts) ->
+                let shipCoords =
+                    parts
+                    |> List.sortBy (fun (_, _, index) -> index)
+                    |> List.map (fun (_, coord, _) -> coord)
+                
+                if List.isEmpty shipCoords then
+                    failwith $"Cannot build ship {shipName} with no coordinates."
+                else
+                   //  #TODO: Ne pas default le facing du bateau. Il faut une function pour ca
+                    { Name = shipName; Coords = shipCoords; Center = Ship.getCenterFromCoords shipCoords; Facing = Direction.North } : Ship)
+
+        { Dims = dims; Ships = ships }
 
     let loadData (data: Data) : Sector Grid =
         (* ------- À COMPLÉTER ------- *)
-        (* ----- Implémentation ------ *)
-        Empty
+        // Initialiser une grille vide
+        let initialGrid = initClearGrid data.Dims
+
+        // Ajouter chaque bateau en iterant sur la liste
+        List.fold (fun currentGrid shipToAdd ->
+            addShip shipToAdd currentGrid
+        ) initialGrid data.Ships
                  
