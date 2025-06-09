@@ -120,8 +120,7 @@ module Battlefield =
                     failwith $"Cannot build ship {shipName} with no coordinates."
                 else
                    //  #TODO: Ne pas default le facing du bateau. Il faut une function pour ca
-                    { Name = shipName; Coords = shipCoords; Center = Ship.getCenterFromCoords shipCoords; Facing = Direction.North } : Ship)
-
+                    { Name = shipName; Coords = shipCoords; Center = Ship.getCenterFromCoords shipCoords; Facing = North } : Ship)
         { Dims = dims; Ships = ships }
 
     let loadData (data: Data) : Sector Grid =
