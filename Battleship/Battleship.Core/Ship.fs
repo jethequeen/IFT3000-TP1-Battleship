@@ -19,46 +19,56 @@ module Ship =
 
     type Ship = {Coords: Coord list; Center: Coord; Facing: Direction; Name: Name}
 
-    (* --- Nouvelles fonctions --- *)
-       
+    (* --- Helper functions --- *)
+    
     let getLength (name: Name) : int =
-        let length =
-            match name with
-            | Spy -> 2
-            | PatrolBoat -> 2
-            | Destroyer -> 3
-            | Submarine -> 3
-            | Cruiser -> 4
-            | AircraftCarrier -> 5
-        length
-        
+        match name with
+        | Spy -> 2
+        | PatrolBoat -> 2
+        | Destroyer -> 3
+        | Submarine -> 3
+        | Cruiser -> 4
+        | AircraftCarrier -> 5
+    
+    let getIndexOfCenter (length: int) : int =
+        match length with
+        | 2 -> 0
+        | 3 -> 1
+        | 4 -> 1
+        | 5 -> 2
+        | _ -> length/2 - 1
+
+    let getGenerationOffset (direction: Direction) (offset: int) : (int * int) =
+        match direction with
+        | North -> (offset, 0)  
+        | South -> (-offset, 0)   
+        | East  -> (0, offset)    
+        | West  -> (0, -offset)   
+
+    let getMovementOffset (direction: Direction) : (int * int) =
+        match direction with
+        | North -> (-1, 0) 
+        | South -> (1, 0)         
+        | East  -> (0, 1)        
+        | West  -> (0, -1)        
+
+    let applyOffset (x: int, y: int) (dx: int, dy: int) : Coord =
+        (x + dx, y + dy)
+
     let generateCoords (center: Coord) (facing: Direction) (name: Name) : Coord List =
         let length = getLength name
-        let indexCenter =
-            if length % 2 = 0 then (length / 2) else length / 2
-        let x,y = center
+        let indexCenter = getIndexOfCenter length
+        let x, y = center
         
-        let rec nextCoords (length: int) (remainingCoordsList : Coord List)  =
-            if length <= 0 then List.rev remainingCoordsList
-            else
-                let offset = length - 1 - indexCenter
-                if offset = 0
-                    then nextCoords (length-1) (center :: remainingCoordsList)
-                else
-                    let coord =
-                        match facing with
-                        | North -> (x-offset, y)
-                        | South -> (x+offset, y)
-                        | East  -> (x, y+offset)
-                        | West -> (x, y-offset)
-                    nextCoords (length-1) (coord :: remainingCoordsList)
-                
-        nextCoords length []
-        
-        
-    let adjacentCells (x,y) : Coord List =
+        [0 .. length - 1]
+        |> List.map (fun currentIndex ->
+            let offset = currentIndex - indexCenter
+            let dx, dy = getGenerationOffset facing offset
+            applyOffset (x, y) (dx, dy))
+
+    let adjacentCells (x, y) : Coord List =
         [ (x+1, y); (x, y+1); (x+1, y+1); (x-1, y); 
-        (x, y-1); (x-1, y-1); (x+1, y-1); (x-1, y+1) ]
+          (x, y-1); (x-1, y-1); (x+1, y-1); (x-1, y+1) ]
         
     let getAllAdjacentsCells (ship: Ship) : Coord List =
         ship.Coords
@@ -67,24 +77,13 @@ module Ship =
  
     let getCenterFromCoords (coords : Coord list) : Coord =
         let length = coords.Length
-        let centerIndex = 
-            if length % 2 = 0 then (length / 2) else length / 2       
-        coords[centerIndex]
+        let indexCenter = getIndexOfCenter length
+        coords[indexCenter]
         
     let calculateNewCoords (ship: Ship) (direction: Direction) : Coord List =
-        let coords = ship.Coords
-        let rec newCoords coords resultsList =
-            match coords with
-            | [] -> resultsList
-            | (x,y) :: rest ->
-                let newCoord =
-                    match direction with
-                    | North -> (x-1, y)
-                    | South -> (x+1, y)
-                    | East  -> (x, y+1)
-                    | West  -> (x, y-1)
-                newCoords rest (newCoord :: resultsList)                
-        newCoords coords [] |> List.rev
+        let dx, dy = getMovementOffset direction
+        ship.Coords
+        |> List.map (fun coord -> applyOffset coord (dx, dy))
     
     let calculateNewCoordsForward (ship: Ship) : Coord List =
         calculateNewCoords ship ship.Facing
@@ -92,24 +91,17 @@ module Ship =
     let calculateNewCenter (ship: Ship) (direction: Direction) : Coord =
         getCenterFromCoords (calculateNewCoords ship direction)   
 
-        
-        
     (* ------- À COMPLÉTER ------- *)
     let createShip (center: Coord) (facing: Direction) (name: Name) : Ship =
         let coords = generateCoords center facing name
-        { Coords = coords; Center = center; Facing = facing; Name = name }
+        let actualCenter = getCenterFromCoords coords
+        { Coords = coords; Center = actualCenter; Facing = facing; Name = name }
 
-        
     let getPerimeter (ship: Ship) (dims: Dims) : Coord list =
-        
         let gridCoords = getGridCoords dims
-        let totalCoords = getAllAdjacentsCells ship
+        let adjacentCoords = getAllAdjacentsCells ship
 
-        totalCoords |> List.filter (fun coord -> not (List.contains coord ship.Coords))
-                    |> List.filter (fun coord -> (List.contains coord gridCoords))
-        
-        
-
-    
-
-    
+        adjacentCoords 
+        |> List.filter (fun coord -> 
+            not (List.contains coord ship.Coords) && 
+            List.contains coord gridCoords)
