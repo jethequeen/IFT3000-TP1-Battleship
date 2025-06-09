@@ -91,7 +91,6 @@ module Battlefield =
 
     let getSelectedName (coord: Coord) (grid: Sector Grid) : Name option =
         (* ------- À COMPLÉTER ------- *)
-        // TODO: Valider si on voit le nom lorsqu'on hover sur le bateau
         match getSector (fst coord) (snd coord) grid with
         | Some (Active (name, _)) -> Some name
         | _ -> None
@@ -131,7 +130,6 @@ module Battlefield =
                 if List.isEmpty shipCoords then
                     failwith $"Cannot build ship {shipName} with no coordinates."
                 else
-                   //  #TODO: Ne pas default le facing du bateau. Il faut une function pour ca
                     { Name = shipName
                       Coords = shipCoords
                       Center = Ship.getCenterFromCoords shipCoords
