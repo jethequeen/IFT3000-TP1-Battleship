@@ -100,29 +100,32 @@ module Navigation =
         let dims = getDimsFromGrid grid
 
         let insideGrid = isCoordsInsideGrid newShip.Coords grid
-        let isAvailable = isCoordsAvailable newShip.Coords grid ship.Name
+        if not insideGrid then
+            false
+        else
+            let isAvailable = isCoordsAvailable newShip.Coords grid ship.Name
 
-        let otherShipsCoords =
-            getGridCoords dims
-            |> List.filter (fun (x, y) ->
-                match getSector x y grid with
-                | Some (Active (n, _)) -> n <> ship.Name
-                | _ -> false)
+            let otherShipsCoords =
+                getGridCoords dims
+                |> List.filter (fun (x, y) ->
+                    match getSector x y grid with
+                    | Some (Active (n, _)) -> n <> ship.Name
+                    | _ -> false)
 
-        let otherShipsPerimeters =
-            otherShipsCoords
-            |> List.collect adjacentCells
-            |> List.filter (fun (x, y) ->
-                x >= 0 && y >= 0 && x < fst dims && y < snd dims &&
-                not (List.contains (x, y) otherShipsCoords))
-            |> List.distinct
+            let otherShipsPerimeters =
+                otherShipsCoords
+                |> List.collect adjacentCells
+                |> List.filter (fun (x, y) ->
+                    x >= 0 && y >= 0 && x < fst dims && y < snd dims &&
+                    not (List.contains (x, y) otherShipsCoords))
+                |> List.distinct
 
-        let forbiddenZones = otherShipsCoords @ otherShipsPerimeters
-        let doesNotCollide = 
-            newShip.Coords 
-            |> List.forall (fun coord -> not (List.contains coord forbiddenZones))
+            let forbiddenZones = otherShipsCoords @ otherShipsPerimeters
+            let doesNotCollide = 
+                newShip.Coords 
+                |> List.forall (fun coord -> not (List.contains coord forbiddenZones))
 
-        insideGrid && isAvailable && doesNotCollide
+            isAvailable && doesNotCollide
         
     let move (ship: Ship) (direction: Direction) : Ship =
         createShip (calculateNewCenter ship direction) ship.Facing ship.Name

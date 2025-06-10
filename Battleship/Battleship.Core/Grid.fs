@@ -46,14 +46,16 @@ module Grid =
        
     
     let rec getSector (x: int) (y: int) (grid: 'a Grid) : 'a option =
-        match grid with
-        | Empty -> None
-        | Row (actualRowIndex, remainingRows) ->
-            if y = 0 then
-                if x < List.length actualRowIndex then Some (List.item x actualRowIndex)
-                else None
-            else
-                getSector x (y - 1) remainingRows
+        if x < 0 || y < 0 then None  // <-- ADD THIS LINE
+        else
+            match grid with
+            | Empty -> None
+            | Row (actualRowIndex, remainingRows) ->
+                if y = 0 then
+                    if x < List.length actualRowIndex then Some (List.item x actualRowIndex)
+                    else None
+                else
+                    getSector x (y - 1) remainingRows
     
     let filterCoords (predicate: Coord -> 'a -> bool) (grid: 'a Grid) : Coord list =
         let dims = getDimsFromGrid grid

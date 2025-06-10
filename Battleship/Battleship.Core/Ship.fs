@@ -78,7 +78,7 @@ module Ship =
     let getCenterFromCoords (coords : Coord list) : Coord =
         let length = coords.Length
         let indexCenter = getIndexOfCenter length
-        coords[indexCenter]
+        coords |> List.item indexCenter
         
     let calculateNewCoords (ship: Ship) (direction: Direction) : Coord List =
         let dx, dy = getMovementOffset direction
