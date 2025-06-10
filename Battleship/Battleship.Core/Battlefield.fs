@@ -97,15 +97,16 @@ module Battlefield =
 
     let determineFacing (coords: Coord list) : Direction =
         match coords with
-        | first :: second :: _ ->
-            let dx = fst second - fst first
-            let dy = snd second - snd first
-            if dx > 0 then North
-            elif dx < 0 then South
-            elif dy < 0 then West
-            elif dy > 0 then East
-            else North
+        | (x1, y1) :: (x2, y2) :: _ ->
+            match (x2 - x1, y2 - y1) with
+            | dx, _ when dx < 0 -> North
+            | dx, _ when dx > 0 -> South
+            | _, dy when dy < 0 -> West
+            | _, dy when dy > 0 -> East
+            | _ -> North
         | _ -> North
+
+
         
     let extractData (grid: Sector Grid) : Data =
         (* ------- À COMPLÉTER ------- *)
