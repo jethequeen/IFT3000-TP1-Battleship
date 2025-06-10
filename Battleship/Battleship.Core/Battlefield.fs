@@ -102,8 +102,8 @@ module Battlefield =
             let dy = snd second - snd first
             if dx > 0 then North
             elif dx < 0 then South
-            elif dy > 0 then West
-            elif dy < 0 then East
+            elif dy < 0 then West
+            elif dy > 0 then East
             else North
         | _ -> North
         
