@@ -1,7 +1,7 @@
 Version .NET : 9.0
 
-OS : Windows 11
+OS : Windows 11, 10
 
-IDE : Jetbrains Ryder
+IDE : Jetbrains Rider
 
 Commentaires (facultatif) :
