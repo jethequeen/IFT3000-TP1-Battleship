@@ -17,28 +17,31 @@ module Navigation =
         | North -> 180
         | East -> 270
 
-    // Fonction pour déterminer si le secteur est actif
     let isSectorActive sector : bool =
         match sector with
         | Some (Active _) -> true
         | _ -> false
+
+    
+    let getOtherShipsPerimetersAndCoords (grid: Sector Grid) (ship: Ship) : Coord list =
+        let dims = getDimsFromGrid grid
+       
+        let otherShipsCoords =
+            getGridCoords dims
+            |> List.filter (fun (x, y) ->
+                match getSector x y grid with
+                | Some (Active (n, _)) -> n <> ship.Name
+                | _ -> false)
+
+        let otherShipsPerimeters =
+            otherShipsCoords
+            |> List.collect adjacentCells
+            |> List.filter (fun (x, y) ->
+                x >= 0 && y >= 0 && x < fst dims && y < snd dims &&
+                not (List.contains (x, y) otherShipsCoords))
+            |> List.distinct
         
-    // Fonction pour obtenir le périmètre de tous les bateaux sur la grille
-    let getAllShipsPerimeters (grid: Sector Grid) : Coord list =
-        let gridDims = getDimsFromGrid grid
-        let activeSectors = getGridCoords gridDims |> List.filter (fun (x, y) -> 
-            isSectorActive(getSector x y grid)
-        )
-        
-        activeSectors 
-        |> List.collect adjacentCells
-        |> List.distinct
-        |> List.filter (fun coord -> 
-            let x, y = coord
-            let width, height = gridDims
-            x >= 0 && x < width && y >= 0 && y < height &&
-            not (isSectorActive(getSector x y grid))
-        )
+        otherShipsCoords @ otherShipsPerimeters
     
     let isCoordsAvailable (coords: Coord List) (grid: Sector Grid) (shipName: Name) : bool =
         let rec statesVerification coords =
@@ -66,27 +69,11 @@ module Navigation =
         let insideGrid = isCoordsInsideGrid coords grid
         insideGrid && coordsVerification
         
+        
     let canPlace (center: Coord) (direction: Direction) (name: Name) (grid: Sector Grid) : bool =
         let ship = createShip center direction name
         let isCoordsValid = coordsVerification ship.Coords grid name
-        let dims = getDimsFromGrid grid
-
-        let otherShipsCoords =
-            getGridCoords dims
-            |> List.filter (fun (x, y) ->
-                match getSector x y grid with
-                | Some (Active (n, _)) -> n <> name
-                | _ -> false)
-
-        let otherShipsPerimeters =
-            otherShipsCoords
-            |> List.collect adjacentCells
-            |> List.filter (fun (x, y) ->
-                x >= 0 && y >= 0 && x < fst dims && y < snd dims &&
-                not (List.contains (x, y) otherShipsCoords))
-            |> List.distinct
-
-        let forbiddenZones = otherShipsCoords @ otherShipsPerimeters
+        let forbiddenZones = getOtherShipsPerimetersAndCoords grid ship
 
         let coordsColliding =
             ship.Coords |> List.filter (fun coord -> List.contains coord forbiddenZones)
@@ -104,23 +91,7 @@ module Navigation =
             false
         else
             let isAvailable = isCoordsAvailable newShip.Coords grid ship.Name
-
-            let otherShipsCoords =
-                getGridCoords dims
-                |> List.filter (fun (x, y) ->
-                    match getSector x y grid with
-                    | Some (Active (n, _)) -> n <> ship.Name
-                    | _ -> false)
-
-            let otherShipsPerimeters =
-                otherShipsCoords
-                |> List.collect adjacentCells
-                |> List.filter (fun (x, y) ->
-                    x >= 0 && y >= 0 && x < fst dims && y < snd dims &&
-                    not (List.contains (x, y) otherShipsCoords))
-                |> List.distinct
-
-            let forbiddenZones = otherShipsCoords @ otherShipsPerimeters
+            let forbiddenZones = getOtherShipsPerimetersAndCoords grid ship
             let doesNotCollide = 
                 newShip.Coords 
                 |> List.forall (fun coord -> not (List.contains coord forbiddenZones))
@@ -132,27 +103,10 @@ module Navigation =
 
     let canRotate (ship: Ship) (direction: Direction) (grid: Sector Grid) : bool =
         let newShip = createShip ship.Center direction ship.Name
-        let dims = getDimsFromGrid grid
-
         let insideGrid = isCoordsInsideGrid newShip.Coords grid
         let isAvailable = isCoordsAvailable newShip.Coords grid ship.Name
+        let forbiddenZones = getOtherShipsPerimetersAndCoords grid ship
         
-        let otherShipsCoords =
-            getGridCoords dims
-            |> List.filter (fun (x, y) ->
-                match getSector x y grid with
-                | Some (Active (n, _)) -> n <> ship.Name
-                | _ -> false)
-
-        let otherShipsPerimeters =
-            otherShipsCoords
-            |> List.collect adjacentCells
-            |> List.filter (fun (x, y) ->
-                x >= 0 && y >= 0 && x < fst dims && y < snd dims &&
-                not (List.contains (x, y) otherShipsCoords))
-            |> List.distinct
-
-        let forbiddenZones = otherShipsCoords @ otherShipsPerimeters
         let doesNotCollide = 
             newShip.Coords 
             |> List.forall (fun coord -> not (List.contains coord forbiddenZones))
