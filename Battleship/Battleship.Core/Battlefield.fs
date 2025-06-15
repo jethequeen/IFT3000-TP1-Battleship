@@ -48,8 +48,6 @@ module Battlefield =
     
     
     let addShip (ship: Ship) (grid: Sector Grid) : Sector Grid =
-        if not (coordsVerification ship.Coords grid ship.Name) then
-            failwith "Invalid ship placement: coordinates are either out of bounds or unavailable."
         // Associer coordonnées à un statut
         let shipMap =
             ship.Coords
