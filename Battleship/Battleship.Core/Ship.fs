@@ -38,14 +38,14 @@ module Ship =
         | 5 -> 2
         | _ -> length/2 - 1
 
-    let getGenerationOffset (direction: Direction) (offset: int) : (int * int) =
+    let getGenerationOffset (direction: Direction) (offset: int) : int * int =
         match direction with
         | North -> (-offset, 0)  
         | South -> (offset, 0)   
         | East  -> (0, offset)    
         | West  -> (0, -offset)   
 
-    let getMovementOffset (direction: Direction) : (int * int) =
+    let getMovementOffset (direction: Direction) : int * int =
         match direction with
         | North -> (-1, 0) 
         | South -> (1, 0)         

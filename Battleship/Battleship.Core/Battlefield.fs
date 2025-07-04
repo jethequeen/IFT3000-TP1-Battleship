@@ -14,15 +14,15 @@ module Battlefield =
         let width, height = dims
         
         //On créé une rangée de la bonne taille d'abord
-        let createRow (width) : Sector List =
-            List.init (width) (fun _ -> Clear)
+        let createRow width : Sector List =
+            List.init width (fun _ -> Clear)
             
         //On remplit notre grille du bon nombre de rangée
-        let rec createGrid (width) (height) : Sector Grid =
+        let rec createGrid width height : Sector Grid =
             if height <= 0 then Empty
             else Row(createRow width, createGrid width (height - 1))
         
-        createGrid (width) (height)
+        createGrid width height
     let buildGridFromValues (width: int) (height: int) (values: 'a list) : 'a Grid =
         let rec build rows remainingValues =
             match rows with
@@ -51,7 +51,7 @@ module Battlefield =
         // Associer coordonnées à un statut
         let shipMap =
             ship.Coords
-            |> List.mapi (fun idx coord -> (coord, Active(ship.Name, idx)))
+            |> List.mapi (fun idx coord -> (coord, Active(ship.Name, idx, false)))
             |> Map.ofList
         // Changer les bonnes valeurs de la grille
         let updatedValues = updateGridWithMap shipMap grid
@@ -65,7 +65,7 @@ module Battlefield =
     let getCoordsOfShip (name: Name) (grid: Sector Grid) : Coord list =
         filterCoords (fun _ sector ->
             match sector with
-            | Active (n, _) when n = name -> true
+            | Active (n, _, _) when n = name -> true
             | _ -> false) grid
         
         
@@ -90,7 +90,7 @@ module Battlefield =
     let getSelectedName (coord: Coord) (grid: Sector Grid) : Name option =
         (* ------- À COMPLÉTER ------- *)
         match getSector (fst coord) (snd coord) grid with
-        | Some (Active (name, _)) -> Some name
+        | Some (Active (name, _, _)) -> Some name
         | _ -> None
 
     let determineFacing (coords: Coord list) : Direction =
@@ -114,7 +114,7 @@ module Battlefield =
             getGridCoords dims
             |> List.choose (fun coord ->
                 match getSector (fst coord) (snd coord) grid with
-                | Some (Active (name, index)) -> Some (name, coord, index)
+                | Some (Active (name, index, false)) -> Some (name, coord, index)
                 | _ -> None)
 
         let ships =
@@ -131,7 +131,7 @@ module Battlefield =
                 else
                     { Name = shipName
                       Coords = shipCoords
-                      Center = Ship.getCenterFromCoords shipCoords
+                      Center = getCenterFromCoords shipCoords
                       Facing = determineFacing shipCoords
                     } : Ship)
         { Dims = dims; Ships = ships }

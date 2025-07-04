@@ -4,7 +4,7 @@ module Navigation =
     open Grid
     open Ship
 
-    type Sector = Clear | Active of Name * int
+    type Sector = Clear | Active of Name * int * bool | Torpedo
 
     type Rotation =
         | Clockwise
@@ -30,7 +30,7 @@ module Navigation =
             getGridCoords dims
             |> List.filter (fun (x, y) ->
                 match getSector x y grid with
-                | Some (Active (n, _)) -> n <> ship.Name
+                | Some (Active (n, _, _)) -> n <> ship.Name
                 | _ -> false)
 
         let otherShipsPerimeters =
@@ -50,7 +50,7 @@ module Navigation =
             | (x, y) :: rest ->
                 let sector = getSector x y grid
                 match sector with
-                | Some (Active (name, _)) when name = shipName -> 
+                | Some (Active (name, _, _)) when name = shipName -> 
                     statesVerification rest
                 | _ when isSectorActive sector -> 
                     false
@@ -84,7 +84,6 @@ module Navigation =
     let canMove (ship: Ship) (direction: Direction) (grid: Sector Grid) : bool =
         let newCenter = calculateNewCenter ship direction
         let newShip = createShip newCenter ship.Facing ship.Name
-        let dims = getDimsFromGrid grid
 
         let insideGrid = isCoordsInsideGrid newShip.Coords grid
         if not insideGrid then

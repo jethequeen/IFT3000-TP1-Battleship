@@ -42,7 +42,7 @@ module Grid =
        
     
     let rec getSector (x: int) (y: int) (grid: 'a Grid) : 'a option =
-        if x < 0 || y < 0 then None  // <-- ADD THIS LINE
+        if x < 0 || y < 0 then None
         else
             match grid with
             | Empty -> None
